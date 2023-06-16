@@ -1,0 +1,138 @@
+/* Reset styles for all elements */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body styles */
+body {
+  background-color: #f1f1f1;
+  font-family: Arial, sans-serif;
+}
+
+/* Wrapper container styles */
+.wrapper {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Header styles */
+header {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* Form styles */
+form {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Hidden file input */
+.file-input {
+  display: none;
+}
+
+/* File upload icon styles */
+i.fa-cloud-upload-alt {
+  font-size: 50px;
+  color: #aaa;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+i.fa-cloud-upload-alt:hover {
+  color: #777;
+}
+
+/* Paragraph styles */
+p {
+  margin-top: 10px;
+  color: #777;
+}
+
+/* Progress and uploaded areas styles */
+.progress-area,
+.uploaded-area {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+/* List item styles within progress and uploaded areas */
+.progress-area li,
+.uploaded-area li {
+  list-style-type: none;
+  margin-bottom: 10px;
+}
+
+/* Row styles within progress and uploaded areas */
+.progress-area li.row,
+.uploaded-area li.row {
+  display: flex;
+  align-items: center;
+}
+
+/* Content styles within progress and uploaded areas */
+.progress-area .content,
+.uploaded-area .content {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* Details styles within progress and uploaded areas */
+.progress-area .details,
+.uploaded-area .details {
+  margin-left: 10px;
+}
+
+/* File name styles within progress and uploaded areas */
+.progress-area .name,
+.uploaded-area .name {
+  font-weight: bold;
+}
+
+/* Percent styles within progress area */
+.progress-area .percent {
+  font-size: 12px;
+  color: #777;
+}
+
+/* Progress bar styles within progress area */
+.progress-area .progress-bar {
+  background-color: #f1f1f1;
+  height: 8px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+/* Progress styles within progress bar */
+.progress-area .progress {
+  height: 100%;
+  background-color: #4CAF50;
+}
+
+/* File size styles within uploaded area */
+.uploaded-area .size {
+  font-size: 12px;
+  color: #777;
+  margin-top: 5px;
+}
+
+/* Checkmark icon styles within uploaded area */
+.uploaded-area .fa-check {
+  color: #4CAF50;
+  font-size: 16px;
+  margin-left: 10px;
+}
