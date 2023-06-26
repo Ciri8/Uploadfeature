@@ -3,10 +3,11 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-      "start": "node server.js"
+        "start": "node server.js"
     },
     "dependencies": {
-      "formidable": "^x.x.x"
+        "fast-csv": "^4.3.6",
+        "formidable": "^x.x.x",
+        "pg": "^8.11.0"
     }
-  }
-  
+}
