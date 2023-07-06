@@ -1,9 +1,10 @@
-import formidable from 'formidable';
+import Formidable from 'formidable';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import pkg from 'pg';
 import * as fastcsv from 'fast-csv';
+import pkg from 'pg';
+import format from 'pg-format';
 
 const { Client } = pkg;
 
@@ -64,10 +65,12 @@ const server = http.createServer((req, res) => {
             res.end(data);
         });
     } else if (req.method === 'POST' && req.url === '/upload') {
-        const form = new formidable.IncomingForm();
-        form.uploadDir = uploadDir;
-        form.keepExtensions = true;
-        form.maxFileSize = 50 * 1024 * 1024; // 50MB
+        const form = Formidable({
+            multiples: true,
+            uploadDir: uploadDir,
+            keepExtensions: true,
+            maxFileSize: 50 * 1024 * 1024 // 50MB
+        });
 
         form.parse(req, (err, fields, files) => {
             if (err) {
@@ -75,54 +78,86 @@ const server = http.createServer((req, res) => {
                 res.end('Internal Server Error');
                 return;
             }
-
-            const filePath = files.file.path;
-
-            // Insert the CSV file data into the database
-            fs.createReadStream(filePath)
+        
+            console.log("File uploaded: ", files.file.path);
+        
+            // Create a unique table name using the filename (without extension)
+            const tableName = path.parse(files.file.name).name;
+        
+            // Read the CSV file data and extract headers
+            let headers;
+            fs.createReadStream(files.file.path)
                 .pipe(fastcsv.parse({ headers: true }))
                 .on('data', row => {
-                    client.query('INSERT INTO uptable (pregnancies, glucose, bloodpressure, skinthickness, insulin, bmi, diabetespedigreefunction, age, outcome) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [row.Pregnancies, row.Glucose, row.BloodPressure, row.SkinThickness, row.Insulin, row.BMI, row.DiabetesPedigreeFunction, row.Age, row.Outcome], (err, res) => {
-                        if (err) {
-                            console.error(err);
-                            res.writeHead(500, { 'Content-Type': 'text/plain' });
-                            res.end('Internal Server Error');
-                            return;
-                        }
-                    });
+                    if (!headers) {
+                        headers = Object.keys(row);
+        
+                        // Create a new table based on the CSV file headers if it doesn't exist
+                        const createTableQuery = `CREATE TABLE IF NOT EXISTS ${tableName} (${headers.map(name => `${name} TEXT`).join(', ')})`;
+                        client.query(createTableQuery, (err, res) => {
+                            if (err) {
+                                console.error('Error creating table:', err);
+                            } else {
+                                console.log('Table created successfully');
+                            }
+                        });
+                    }
                 })
                 .on('end', () => {
-                    console.log('CSV file successfully processed');
-                    res.writeHead(200, { 'Content-Type': 'text/plain' });
-                    res.end('File uploaded and data inserted into database successfully');
-                })
-                .on('error', err => {
-                    console.error(err);
-                    res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('Internal Server Error');
+                    console.log('CSV header processing ended');
+        
+                    // Insert the CSV file data into the new table
+                    fs.createReadStream(files.file.path)
+                        .pipe(fastcsv.parse({ headers: true }))
+                        .on('data', row => {
+                            console.log('CSV row:', row);
+                            const values = Object.values(row);
+        
+                            // Insert the CSV file data into the new table
+                            const placeholders = headers.map((_, i) => `$${i + 1}`).join(',');
+                            const insertDataQuery = `INSERT INTO ${tableName} (${headers.join(',')}) VALUES (${placeholders})`;
+                            client.query(insertDataQuery, values, (err, res) => {
+                                if (err) {
+                                    console.error('Error inserting data:', err);
+                                } else {
+                                    console.log('Data inserted successfully');
+                                }
+                            });
+                        })
+                        .on('end', async () => {
+                            console.log('CSV processing ended');
+        
+                            const checkTableQuery = `SELECT to_regclass('public.${tableName}');`;
+                            const { rows } = await client.query(checkTableQuery);
+                            if (rows[0].to_regclass !== null) {
+                                console.log('Table exists in the database');
+                            } else {
+                                console.log('Table does not exist in the database');
+                            }
+                        });
                 });
         });
-    } else if (req.method === 'GET') {
-        const filePath = '.' + req.url;
-        const ext = path.extname(filePath);
-        const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-        fs.readFile(filePath, (err, data) => {
-            if (err) {
-                res.writeHead(404, { 'Content-Type': 'text/plain' });
-                res.end('Not Found');
-                return;
-            }
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(data);
-        });
+        
+        
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('File uploaded and processed.');
     } else {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
+        // Assume the request is for a static file
+        const filePath = path.join(process.cwd(), req.url);
+        fs.readFile(filePath, (err, content) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error occurred: could not find the file');
+            } else {
+                const ext = path.extname(filePath);
+                const contentType = mimeTypes[ext] || 'application/octet-stream';
+                res.writeHead(200, { 'Content-Type': contentType });
+                res.end(content, 'utf-8');
+            }
+        });
     }
 });
 
-const PORT = 3000;
-server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+server.listen(3000, () => {
+    console.log('Server listening on port 3000');
 });
